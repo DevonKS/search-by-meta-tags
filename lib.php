@@ -45,8 +45,9 @@ class local_searchbytags_question_bank_search_condition extends core_question\ba
         if ( (!empty($this->nottags)) && $this->nottags[0] == null) {
             array_shift($this->nottags);
         }
-        $this->metatagsearch = optional_param('metasearchtext', '', PARAM_TEXT);
-        if ( (!empty($this->tags)) || (!empty($this->nottags)) || (!empty($this->metatagsearch)) ) {
+        $this->locfilter = optional_param('locfilter', '', PARAM_TEXT);
+        $this->locvalue = optional_param('locsearchval', '', PARAM_TEXT);
+        if ( (!empty($this->tags)) || (!empty($this->nottags)) || ((!empty($this->locfilter)) && (!empty($this->locvalue))) ) {
             $this->init();
         }
     }
@@ -81,9 +82,11 @@ class local_searchbytags_question_bank_search_condition extends core_question\ba
         echo html_writer::select($tags, 'nottags[]', $this->nottags, array('' => '--show all--'), $attr);
         echo "<br />\n";
 
-        echo html_writer::label('Search Meta-Tags:', 'metasearchtext');
-        echo html_writer::empty_tag('input', array('name' => 'metasearchtext', 'id' => 'metasearchtext', 'class' => 'searchoptions',
-                'value' => $this->metatagsearch));
+        echo html_writer::label('Filter LOC:', 'locsearchval');
+        echo html_writer::select(array(1=>'>', 2=>'=', 3=>'<'), 'locfilter', $this->locfilter);
+        echo html_writer::empty_tag('input', array('name' => 'locsearchval', 'id' => 'locsearchval', 'class' => 'searchoptions',
+                'value' => $this->locvalue));
+        echo "<button type='button' name='locaddrow'>Add Row</button>";
     }
 
     private function init() {
@@ -119,8 +122,9 @@ class local_searchbytags_question_bank_search_condition extends core_question\ba
 
         //Get tags starting with TUVUQX
         $table = 'tag';
-        //TODO this is the real thing $select = "tags that belong to questions in current category AND name LIKE 'TUVUQSJ7%'";
-        $select = "name LIKE 'TUVUQX%'"; //Tester
+        //TODO I didn't add "tags that belong to questions in current category" to the search criteria but still seems
+        // to work;
+        $select = "name LIKE 'TUVUQX%'";
         $result = $DB->get_records_select($table,$select);
 
         //decode these tags
@@ -133,22 +137,34 @@ class local_searchbytags_question_bank_search_condition extends core_question\ba
         //search these tags
         $matchedTags = array();
         foreach ($MetaTags as $tagName => $MetaTag) {
-            foreach ($MetaTag as $attribute => $value) {
-                if ($value == $this->metatagsearch) {
+
+            if ($this->locfilter == 1) {
+                if ($MetaTag->LOC > $this->locvalue) {
+                    $matchedTags[] = $tagName;
+                }
+            }
+
+            if ($this->locfilter == 2) {
+                if ($MetaTag->LOC == $this->locvalue) {
+                    $matchedTags[] = $tagName;
+                }
+            }
+
+            if ($this->locfilter == 3) {
+                if ($MetaTag->LOC < $this->locvalue) {
                     $matchedTags[] = $tagName;
                 }
             }
         }
 
-        //Check each q and if it contains all tags in matchedTags then It passes.
+        //Check each q and if it contains a tags in matchedTags then It passes.
         if (! empty($this->where) ) {
             $this->where .= " AND ";
         }
 
         if (!empty($matchedTags)) {
             list($where, $this->params) = $DB->get_in_or_equal($matchedTags, SQL_PARAMS_NAMED, 'tag');
-            $this->where .= "(SELECT COUNT(*) as tagcount FROM {tag_instance} ti WHERE itemid=q.id AND tagid $where)=".
-                        count($matchedTags);
+            $this->where .= "(SELECT COUNT(*) as tagcount FROM {tag_instance} ti WHERE itemid=q.id AND tagid $where)>0";
         }
         else {
             $this->where .= "1=0";
