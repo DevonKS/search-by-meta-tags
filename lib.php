@@ -17,8 +17,7 @@ defined('MOODLE_INTERNAL') || die;
 
 global $CFG;
 require_once($CFG->dirroot . '/question/editlib.php');
-
-
+require_once($CFG->dirroot . '/local/searchbytags/yaml_parser/spyc.php');
 
 function local_searchbytags_get_question_bank_search_conditions($caller) {
     return array( new local_searchbytags_question_bank_search_condition($caller));
@@ -86,7 +85,6 @@ class local_searchbytags_question_bank_search_condition extends core_question\ba
         echo html_writer::select(array(1=>'>', 2=>'=', 3=>'<'), 'locfilter', $this->locfilter);
         echo html_writer::empty_tag('input', array('name' => 'locsearchval', 'id' => 'locsearchval', 'class' => 'searchoptions',
                 'value' => $this->locvalue));
-        echo "<button type='button' name='locaddrow'>Add Row</button>";
     }
 
     private function init() {
@@ -120,54 +118,67 @@ class local_searchbytags_question_bank_search_condition extends core_question\ba
             $this->params = array_merge($this->params, $params);
         }
 
-        //Get tags starting with TUVUQX
-        $table = 'tag';
-        //TODO I didn't add "tags that belong to questions in current category" to the search criteria but still seems
-        // to work;
-        $select = "name LIKE 'TUVUQX%'";
-        $result = $DB->get_records_select($table,$select);
+        $catId = explode(",", optional_param('category', '', PARAM_TEXT))[0];
+        $result = $DB->get_records_select("question","category = $catId");
 
-        //decode these tags
-        $MetaTags = array();
-        foreach ($result as $id => $tagRow) {
-            $json = substr(base64_decode($tagRow->rawname), 4);
-            $MetaTags[$id] = json_decode($json);
+        $matching_questions = array();
+        foreach ($result as $question) {
+            $qid = $question->id;
+            $sql = "SELECT t.rawname
+                    FROM {question} q, {tag} t, {tag_instance} ti
+                    WHERE q.id = ti.itemid AND t.id = ti.tagid AND q.id = ?";
+
+            $tags = $DB->get_records_sql($sql, array($qid));
+
+            $base64_metatag = "";
+            foreach ($tags as $id => $tag) {
+                if (substr($tag->rawname, 0, 4) == "META") {
+                    $base64_metatag .= substr($tag->rawname, 4);
+                }
+            }
+
+            $yaml_metatag = base64_decode($base64_metatag);
+            $metatag = spyc_load($yaml_metatag);
+
+            if (isset($metatag['LOC'])) {
+                if ($this->locfilter == 1) {
+                    if ($metatag['LOC'] > $this->locvalue) {
+                        $matching_questions[] = $qid;
+                    }
+                }
+
+                if ($this->locfilter == 2) {
+                    if ($metatag['LOC'] == $this->locvalue) {
+                        $matching_questions[] = $qid;
+                    }
+                }
+
+                if ($this->locfilter == 3) {
+                    if ($metatag['LOC'] < $this->locvalue) {
+                        $matching_questions[] = $qid;
+                    }
+                }
+            }
         }
 
-        //search these tags
-        $matchedTags = array();
-        foreach ($MetaTags as $tagName => $MetaTag) {
 
-            if ($this->locfilter == 1) {
-                if ($MetaTag->LOC > $this->locvalue) {
-                    $matchedTags[] = $tagName;
-                }
-            }
-
-            if ($this->locfilter == 2) {
-                if ($MetaTag->LOC == $this->locvalue) {
-                    $matchedTags[] = $tagName;
-                }
-            }
-
-            if ($this->locfilter == 3) {
-                if ($MetaTag->LOC < $this->locvalue) {
-                    $matchedTags[] = $tagName;
-                }
-            }
-        }
-
-        //Check each q and if it contains a tags in matchedTags then It passes.
-        if (! empty($this->where) ) {
+        if (!empty($this->where)) {
             $this->where .= " AND ";
         }
 
-        if (!empty($matchedTags)) {
-            list($where, $this->params) = $DB->get_in_or_equal($matchedTags, SQL_PARAMS_NAMED, 'tag');
-            $this->where .= "(SELECT COUNT(*) as tagcount FROM {tag_instance} ti WHERE itemid=q.id AND tagid $where)>0";
+        if (!empty($matching_questions)) {
+            $where = "q.id ";
+            if (count($matching_questions) == 1){
+                $where .= "= ".$matching_questions[0];
+            }
+            else {
+                $where .= "IN (" . implode(',', $matching_questions) . ")";
+            }
+
+            $this->where .= $where;
         }
         else {
-            $this->where .= "1=0";
+            $this->where .= "q.id IN (-1)";
         }
     }
 
@@ -180,6 +191,7 @@ class local_searchbytags_question_bank_search_condition extends core_question\ba
                  SELECT DISTINCT tagi.tagid FROM {tag_instance} tagi, {question}
                          WHERE itemtype='question' AND {question}.id=tagi.itemid AND category $catidtest
                 )
+                AND name NOT LIKE 'META%'
                 ORDER BY name";
         return $DB->get_records_sql_menu($sql, $params);
     }
