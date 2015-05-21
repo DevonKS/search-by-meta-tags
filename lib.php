@@ -64,27 +64,44 @@ class local_searchbytags_question_bank_search_condition extends core_question\ba
         global $output;
         require_login();
 
-        $tags = $this->get_tags_used();
-        $attr = array (
-                          'multiple' => 'true',
-                          'class' => 'searchoptions large'
-                      );
-        if (count($tags) > 10) {
-            $attr['size'] = 10;
-        }
-        echo html_writer::label('Show questions with tags:', 'tags[]');
-        echo "<br />\n";
-        echo html_writer::select($tags, 'tags[]', $this->tags, array('' => '--show all--'), $attr);
-        echo "<br />\n";
-        echo html_writer::label('Show questions WITHOUT tags:', 'tags[]');
-        echo "<br />\n";
-        echo html_writer::select($tags, 'nottags[]', $this->nottags, array('' => '--show all--'), $attr);
-        echo "<br />\n";
+//        $tags = $this->get_tags_used();
+//        $attr = array (
+//                          'multiple' => 'true',
+//                          'class' => 'searchoptions large'
+//                      );
+//        if (count($tags) > 10) {
+//            $attr['size'] = 10;
+//        }
+//        echo html_writer::label('Show questions with tags:', 'tags[]');
+//        echo "<br />\n";
+//        echo html_writer::select($tags, 'tags[]', $this->tags, array('' => '--show all--'), $attr);
+//        echo "<br />\n";
+//        echo html_writer::label('Show questions WITHOUT tags:', 'tags[]');
+//        echo "<br />\n";
+//        echo html_writer::select($tags, 'nottags[]', $this->nottags, array('' => '--show all--'), $attr);
+//        echo "<br />\n";
 
+        $this->display_add_filter_controls();
+    }
+
+
+    private function display_add_filter_controls() {
+        echo "<br>";
+        echo html_writer::label('Add Filter:', 'filter_name');
+        echo html_writer::empty_tag('input', array('id' => 'filter_name'));
+        echo "<div><select style='width: 210px' size='4'>
+                <option value='volvo'>Volvo</option>
+                <option value='saab'>Saab</option>
+                <option value='mercedes'>Mercedes</option>
+                <option value='audi'>Audi</option>
+              </select></div>";
+    }
+
+    private function display_loc_filter() {
         echo html_writer::label('Filter LOC:', 'locsearchval');
         echo html_writer::select(array(1=>'>', 2=>'=', 3=>'<'), 'locfilter', $this->locfilter);
-        echo html_writer::empty_tag('input', array('name' => 'locsearchval', 'id' => 'locsearchval', 'class' => 'searchoptions',
-                'value' => $this->locvalue));
+        echo html_writer::empty_tag('input', array('name' => 'locsearchval', 'id' => 'locsearchval',
+                                                   'class' => 'searchoptions', 'value' => $this->locvalue));
     }
 
     private function init() {
@@ -104,19 +121,23 @@ class local_searchbytags_question_bank_search_condition extends core_question\ba
         }
 
         if (!empty($this->nottags)) {
-            if (! is_numeric($this->nottags[0]) ) {
+            if (!is_numeric($this->nottags[0])) {
                 list($tagswhere, $tagsparams) = $DB->get_in_or_equal($this->nottags, SQL_PARAMS_NAMED, 'tag');
                 $tagids = $DB->get_fieldset_select('tag', 'id', 'name ' . $tagswhere, $tagsparams);
             } else {
                 $tagids = $this->nottags;
             }
             list($where, $params) = $DB->get_in_or_equal($tagids, SQL_PARAMS_NAMED, 'tag');
-            if (! empty($this->where) ) {
+            if (!empty($this->where)) {
                 $this->where .= " AND ";
             }
             $this->where .= "(SELECT COUNT(*) as tagcount FROM {tag_instance} ti WHERE itemid=q.id AND tagid $where)=0";
             $this->params = array_merge($this->params, $params);
         }
+    }
+
+    private function filter_loc() {
+        global $DB;
 
         $catId = explode(",", optional_param('category', '', PARAM_TEXT))[0];
         $result = $DB->get_records_select("question","category = $catId");
