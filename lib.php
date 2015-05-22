@@ -86,15 +86,20 @@ class local_searchbytags_question_bank_search_condition extends core_question\ba
 
 
     private function display_add_filter_controls() {
+        global $PAGE;
+
+        $meta_tags = $this->get_meta_tags();
+
         echo "<br>";
         echo html_writer::label('Add Filter:', 'filter_name');
         echo html_writer::empty_tag('input', array('id' => 'filter_name'));
-        echo "<div><select style='width: 210px' size='4'>
-                <option value='volvo'>Volvo</option>
-                <option value='saab'>Saab</option>
-                <option value='mercedes'>Mercedes</option>
-                <option value='audi'>Audi</option>
-              </select></div>";
+        echo "<div><select id='filter_combobox' style='width: 210px' size='4'>";
+        foreach ($meta_tags as $meta_tag) {
+            echo "<option value='$meta_tag'>$meta_tag</option>";
+        }
+        echo "</select></div>";
+
+        $PAGE->requires->js_init_call('M.local_searchbytags.init');
     }
 
     private function display_loc_filter() {
@@ -134,6 +139,40 @@ class local_searchbytags_question_bank_search_condition extends core_question\ba
             $this->where .= "(SELECT COUNT(*) as tagcount FROM {tag_instance} ti WHERE itemid=q.id AND tagid $where)=0";
             $this->params = array_merge($this->params, $params);
         }
+    }
+
+    private function get_meta_tags(){
+        global $DB;
+
+        $result = $DB->get_records("question");
+
+        $meta_tags = array();
+        foreach ($result as $question) {
+            $qid = $question->id;
+            $sql = "SELECT t.rawname
+                        FROM {question} q, {tag} t, {tag_instance} ti
+                        WHERE q.id = ti.itemid AND t.id = ti.tagid AND q.id = ?";
+
+            $tags = $DB->get_records_sql($sql, array($qid));
+
+            $base64_metatag = "";
+            foreach ($tags as $id => $tag) {
+                if (substr($tag->rawname, 0, 4) == "META") {
+                    $base64_metatag .= substr($tag->rawname, 4);
+                }
+            }
+
+            $yaml_metatag = base64_decode($base64_metatag);
+            if ($yaml_metatag != '') {
+                $meta_tag = spyc_load($yaml_metatag);
+                $meta_tags = array_merge($meta_tags, array_keys($meta_tag));
+            }
+        }
+
+        $meta_tags = array_unique($meta_tags);
+        asort($meta_tags);
+
+        return $meta_tags;
     }
 
     private function filter_loc() {
