@@ -93,13 +93,15 @@ class local_searchbytags_question_bank_search_condition extends core_question\ba
         echo "<br>";
         echo html_writer::label('Add Filter:', 'filter_name');
         echo html_writer::empty_tag('input', array('id' => 'filter_name'));
-        echo "<div><select id='filter_combobox' style='width: 210px' size='4'>";
+        echo "<div id='filter_controls'><select id='filter_combobox' style='width: 210px' size='4'>";
         foreach ($meta_tags as $meta_tag) {
             echo "<option value='$meta_tag'>$meta_tag</option>";
         }
         echo "</select></div>";
 
-        $PAGE->requires->js_init_call('M.local_searchbytags.init');
+        echo html_writer::select(array("Exists"), 'filter','', array('' => 'choosedots'),array('id' => 'filter_type'));
+
+        $PAGE->requires->yui_module('moodle-local_searchbytags-filter', 'M.local_searchbytags.filter.init');
     }
 
     private function display_loc_filter() {

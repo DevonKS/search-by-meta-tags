@@ -1,0 +1,8 @@
+{
+  "moodle-local_searchbytags-filter": {
+    "requires": [
+      "base",
+      "node"
+    ]
+  }
+}

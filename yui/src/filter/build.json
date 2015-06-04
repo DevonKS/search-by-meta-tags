@@ -1,0 +1,10 @@
+{
+  "name": "moodle-local_searchbytags-filter",
+  "builds": {
+    "moodle-local_searchbytags-filter": {
+      "jsfiles": [
+        "filter.js"
+      ]
+    }
+  }
+}
