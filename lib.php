@@ -18,6 +18,7 @@ defined('MOODLE_INTERNAL') || die;
 global $CFG;
 require_once($CFG->dirroot . '/question/editlib.php');
 require_once($CFG->dirroot . '/local/searchbytags/yaml_parser/spyc.php');
+require_once($CFG->dirroot . '/local/searchbytags/classes/ExistsFilter.php');
 
 function local_searchbytags_get_question_bank_search_conditions($caller) {
     return array( new local_searchbytags_question_bank_search_condition($caller));
@@ -34,21 +35,25 @@ class local_searchbytags_question_bank_search_condition extends core_question\ba
     protected $tags;
     protected $where;
     protected $params;
+    protected $filters;
 
     public function __construct() {
-        $this->tags = optional_param_array('tags', array(), PARAM_TEXT);
-        if ( (!empty($this->tags)) && $this->tags[0] == null) {
-            array_shift($this->tags);
-        }
-        $this->nottags = optional_param_array('nottags', array(), PARAM_TEXT);
-        if ( (!empty($this->nottags)) && $this->nottags[0] == null) {
-            array_shift($this->nottags);
-        }
-        $this->locfilter = optional_param('locfilter', '', PARAM_TEXT);
-        $this->locvalue = optional_param('locsearchval', '', PARAM_TEXT);
-        if ( (!empty($this->tags)) || (!empty($this->nottags)) || ((!empty($this->locfilter)) && (!empty($this->locvalue))) ) {
+        $this->filters = optional_param('filters', '', PARAM_TEXT);
+
+        if (!empty($this->filters)) {
             $this->init();
         }
+
+
+//        $this->nottags = optional_param_array('nottags', array(), PARAM_TEXT);
+//        if ( (!empty($this->nottags)) && $this->nottags[0] == null) {
+//            array_shift($this->nottags);
+//        }
+//        $this->locfilter = optional_param('locfilter', '', PARAM_TEXT);
+//        $this->locvalue = optional_param('locsearchval', '', PARAM_TEXT);
+//        if ( (!empty($this->tags)) || (!empty($this->nottags)) || ((!empty($this->locfilter)) && (!empty($this->locvalue))) ) {
+//            $this->init();
+//        }
     }
 
     public function where() {
@@ -90,6 +95,10 @@ class local_searchbytags_question_bank_search_condition extends core_question\ba
 
         $meta_tags = $this->get_meta_tags();
 
+        echo "<br />\n";
+        echo html_writer::label('Current Filters:', 'filters');
+        echo "<textarea name='filters' rows='4' cols='30' id='current_filters'>$this->filters</textarea>";
+
         echo "<br>";
         echo html_writer::label('Add Filter:', 'filter_name');
         echo html_writer::empty_tag('input', array('id' => 'filter_name'));
@@ -97,9 +106,11 @@ class local_searchbytags_question_bank_search_condition extends core_question\ba
         foreach ($meta_tags as $meta_tag) {
             echo "<option value='$meta_tag'>$meta_tag</option>";
         }
-        echo "</select></div>";
+        echo "</select>";
 
         echo html_writer::select(array("Exists"), 'filter','', array('' => 'choosedots'),array('id' => 'filter_type'));
+
+        echo"<div id='filter_type_controls'></div></div>";
 
         $PAGE->requires->yui_module('moodle-local_searchbytags-filter', 'M.local_searchbytags.filter.init');
     }
@@ -114,32 +125,54 @@ class local_searchbytags_question_bank_search_condition extends core_question\ba
     private function init() {
         global $DB;
 
-        $this->params = array();
-        if (!empty($this->tags)) {
-            if (! is_numeric($this->tags[0]) ) {
-                list($tagswhere, $tagsparams) = $DB->get_in_or_equal($this->tags, SQL_PARAMS_NAMED, 'tag');
-                $tagids = $DB->get_fieldset_select('tag', 'id', 'name ' . $tagswhere, $tagsparams);
-            } else {
-                $tagids = $this->tags;
-            }
-            list($where, $this->params) = $DB->get_in_or_equal($tagids, SQL_PARAMS_NAMED, 'tag');
-            $this->where = "(SELECT COUNT(*) as tagcount FROM {tag_instance} ti WHERE itemid=q.id AND tagid $where)=".
-                       count($this->tags);
-        }
+//        $this->params = array();
+//        if (!empty($this->tags)) {
+//            if (! is_numeric($this->tags[0]) ) {
+//                list($tagswhere, $tagsparams) = $DB->get_in_or_equal($this->tags, SQL_PARAMS_NAMED, 'tag');
+//                $tagids = $DB->get_fieldset_select('tag', 'id', 'name ' . $tagswhere, $tagsparams);
+//            } else {
+//                $tagids = $this->tags;
+//            }
+//            list($where, $this->params) = $DB->get_in_or_equal($tagids, SQL_PARAMS_NAMED, 'tag');
+//            $this->where = "(SELECT COUNT(*) as tagcount FROM {tag_instance} ti WHERE itemid=q.id AND tagid $where)=".
+//                       count($this->tags);
+//        }
+//
+//        if (!empty($this->nottags)) {
+//            if (!is_numeric($this->nottags[0])) {
+//                list($tagswhere, $tagsparams) = $DB->get_in_or_equal($this->nottags, SQL_PARAMS_NAMED, 'tag');
+//                $tagids = $DB->get_fieldset_select('tag', 'id', 'name ' . $tagswhere, $tagsparams);
+//            } else {
+//                $tagids = $this->nottags;
+//            }
+//            list($where, $params) = $DB->get_in_or_equal($tagids, SQL_PARAMS_NAMED, 'tag');
+//            if (!empty($this->where)) {
+//                $this->where .= " AND ";
+//            }
+//            $this->where .= "(SELECT COUNT(*) as tagcount FROM {tag_instance} ti WHERE itemid=q.id AND tagid $where)=0";
+//            $this->params = array_merge($this->params, $params);
+//        }
 
-        if (!empty($this->nottags)) {
-            if (!is_numeric($this->nottags[0])) {
-                list($tagswhere, $tagsparams) = $DB->get_in_or_equal($this->nottags, SQL_PARAMS_NAMED, 'tag');
-                $tagids = $DB->get_fieldset_select('tag', 'id', 'name ' . $tagswhere, $tagsparams);
-            } else {
-                $tagids = $this->nottags;
-            }
-            list($where, $params) = $DB->get_in_or_equal($tagids, SQL_PARAMS_NAMED, 'tag');
+        if(!empty($this->filters)) {
+            $filters = explode("\n", $this->filters);
+
+            //primitive example can be seen below
+            //for each filter
+                //identify what type of filter it is
+                //create filter with nifty "new $filter_name"
+                //apply filter
+
+            $tag = explode(" ", $filters[0])[0];
+
+            $exist_filter = new ExistsFilter($tag);
+            $where = $exist_filter->apply_filter();
+
             if (!empty($this->where)) {
                 $this->where .= " AND ";
             }
-            $this->where .= "(SELECT COUNT(*) as tagcount FROM {tag_instance} ti WHERE itemid=q.id AND tagid $where)=0";
-            $this->params = array_merge($this->params, $params);
+
+            $this->where .= $where;
+
         }
     }
 
