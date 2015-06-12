@@ -17,8 +17,10 @@ defined('MOODLE_INTERNAL') || die;
 
 global $CFG;
 require_once($CFG->dirroot . '/question/editlib.php');
-require_once($CFG->dirroot . '/local/searchbytags/yaml_parser/spyc.php');
-require_once($CFG->dirroot . '/local/searchbytags/classes/ExistsFilter.php');
+include_once($CFG->dirroot . '/local/searchbytags/yaml_parser/spyc.php');
+include_once($CFG->dirroot . '/local/searchbytags/classes/ExistsFilter.php');
+include_once($CFG->dirroot . '/local/searchbytags/classes/TextFilter.php');
+include_once($CFG->dirroot . '/local/searchbytags/classes/NumberFilter.php');
 
 function local_searchbytags_get_question_bank_search_conditions($caller) {
     return array( new local_searchbytags_question_bank_search_condition($caller));
@@ -97,7 +99,7 @@ class local_searchbytags_question_bank_search_condition extends core_question\ba
 
         echo "<br />\n";
         echo html_writer::label('Current Filters:', 'filters');
-        echo "<textarea name='filters' rows='4' cols='30' id='current_filters'>$this->filters</textarea>";
+        echo "<textarea name='filters' rows='4' cols='50' id='current_filters'>$this->filters</textarea>";
 
         echo "<br>";
         echo html_writer::label('Add Filter:', 'filter_name');
@@ -108,7 +110,7 @@ class local_searchbytags_question_bank_search_condition extends core_question\ba
         }
         echo "</select>";
 
-        echo html_writer::select(array("Exists"), 'filter','', array('' => 'choosedots'),array('id' => 'filter_type'));
+        echo html_writer::select(array("Exists", "Text", "Number"), 'filter','', array('' => 'choosedots'),array('id' => 'filter_type'));
 
         echo"<div id='filter_type_controls'></div></div>";
 
@@ -155,24 +157,23 @@ class local_searchbytags_question_bank_search_condition extends core_question\ba
 
         if(!empty($this->filters)) {
             $filters = explode("\n", $this->filters);
+            array_pop($filters); //The last element of the filters array is always and empty string
 
-            //primitive example can be seen below
-            //for each filter
-                //identify what type of filter it is
-                //create filter with nifty "new $filter_name"
-                //apply filter
+            foreach ($filters as $filter_string) {
+                $filter_args = explode(" ", $filter_string);
+                $filter_type = trim(array_pop($filter_args));
+                $tag = trim($filter_args[0], '"');
+                $args = array_slice($filter_args, 1);
 
-            $tag = explode(" ", $filters[0])[0];
+                $filter = new $filter_type($tag, $args);
+                $where = $filter->apply_filter();
 
-            $exist_filter = new ExistsFilter($tag);
-            $where = $exist_filter->apply_filter();
+                if (!empty($this->where)) {
+                    $this->where .= " AND ";
+                }
 
-            if (!empty($this->where)) {
-                $this->where .= " AND ";
+                $this->where .= $where;
             }
-
-            $this->where .= $where;
-
         }
     }
 

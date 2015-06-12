@@ -13,18 +13,24 @@
 //
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
+
 defined('MOODLE_INTERNAL') || die;
 
 abstract class AbstractFilter {
     protected $filter_tag;
 
-    abstract protected function filter($metatags); //Returns the where statement?
+    abstract protected function filter($metatag); //Returns the where statement?
 
     public function apply_filter() {
         $catId = explode(",", optional_param('category', '', PARAM_TEXT))[0];
         $metatags = $this->get_question_metatags($catId);
 
-        $matching_questions = $this->filter($metatags);
+        $matching_questions = array();
+        foreach($metatags as $qid => $metatag) {
+            if ($this->filter($metatag)) {
+                $matching_questions[] = $qid;
+            }
+        }
 
         return $this->get_where_statement($matching_questions);
     }

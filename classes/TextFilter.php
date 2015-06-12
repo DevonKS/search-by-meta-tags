@@ -16,22 +16,28 @@
 
 include_once("AbstractFilter.php");
 
-class ExistsFilter extends AbstractFilter {
-    private $exists;
+class TextFilter extends AbstractFilter {
+    private $filter_text;
+    private $contains;
 
     public function __construct($tag, $args) {
         $this->filter_tag = $tag;
 
         if ($args[0] == "doesn't") {
-            $this->exists = false;
+            $this->contains = false;
         }
         else {
-            $this->exists = true;
+            $this->contains = true;
         }
+
+        $this->filter_text = trim(array_pop($args), '"');
     }
 
     protected function filter($metatag)
     {
-        return isset($metatag[$this->filter_tag]) == $this->exists;
+        if (isset($metatag[$this->filter_tag])) {
+            return strpos($metatag[$this->filter_tag], $this->filter_text) == $this->contains;
+        }
+        return  false;
     }
 }
