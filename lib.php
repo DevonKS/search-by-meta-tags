@@ -45,17 +45,6 @@ class local_searchbytags_question_bank_search_condition extends core_question\ba
         if (!empty($this->filters)) {
             $this->init();
         }
-
-
-//        $this->nottags = optional_param_array('nottags', array(), PARAM_TEXT);
-//        if ( (!empty($this->nottags)) && $this->nottags[0] == null) {
-//            array_shift($this->nottags);
-//        }
-//        $this->locfilter = optional_param('locfilter', '', PARAM_TEXT);
-//        $this->locvalue = optional_param('locsearchval', '', PARAM_TEXT);
-//        if ( (!empty($this->tags)) || (!empty($this->nottags)) || ((!empty($this->locfilter)) && (!empty($this->locvalue))) ) {
-//            $this->init();
-//        }
     }
 
     public function where() {
@@ -70,23 +59,6 @@ class local_searchbytags_question_bank_search_condition extends core_question\ba
         global $DB;
         global $output;
         require_login();
-
-//        $tags = $this->get_tags_used();
-//        $attr = array (
-//                          'multiple' => 'true',
-//                          'class' => 'searchoptions large'
-//                      );
-//        if (count($tags) > 10) {
-//            $attr['size'] = 10;
-//        }
-//        echo html_writer::label('Show questions with tags:', 'tags[]');
-//        echo "<br />\n";
-//        echo html_writer::select($tags, 'tags[]', $this->tags, array('' => '--show all--'), $attr);
-//        echo "<br />\n";
-//        echo html_writer::label('Show questions WITHOUT tags:', 'tags[]');
-//        echo "<br />\n";
-//        echo html_writer::select($tags, 'nottags[]', $this->nottags, array('' => '--show all--'), $attr);
-//        echo "<br />\n";
 
         $this->display_add_filter_controls();
     }
@@ -110,50 +82,25 @@ class local_searchbytags_question_bank_search_condition extends core_question\ba
         }
         echo "</select>";
 
-        echo html_writer::select(array("Exists", "Text", "Number"), 'filter','', array('' => 'choosedots'),array('id' => 'filter_type'));
+        $filters = array("exists" => "Exists",
+            "not exist" => "Doesn't Exist",
+            "contains" => "Contains",
+            "not contain" => "Doesn't Contain",
+            "greater than" => "Greater Than",
+            "greater than equal" => "Greater Than or Equal To",
+            "less than" => "Less Than",
+            "less than equal" => "Less Than or Equal To",
+            "equal" => "Equal To");
+
+        echo html_writer::select($filters, 'filter','', array('' => 'choosedots'),array('id' => 'filter_type'));
 
         echo"<div id='filter_type_controls'></div></div>";
 
         $PAGE->requires->yui_module('moodle-local_searchbytags-filter', 'M.local_searchbytags.filter.init');
     }
 
-    private function display_loc_filter() {
-        echo html_writer::label('Filter LOC:', 'locsearchval');
-        echo html_writer::select(array(1=>'>', 2=>'=', 3=>'<'), 'locfilter', $this->locfilter);
-        echo html_writer::empty_tag('input', array('name' => 'locsearchval', 'id' => 'locsearchval',
-                                                   'class' => 'searchoptions', 'value' => $this->locvalue));
-    }
-
     private function init() {
         global $DB;
-
-//        $this->params = array();
-//        if (!empty($this->tags)) {
-//            if (! is_numeric($this->tags[0]) ) {
-//                list($tagswhere, $tagsparams) = $DB->get_in_or_equal($this->tags, SQL_PARAMS_NAMED, 'tag');
-//                $tagids = $DB->get_fieldset_select('tag', 'id', 'name ' . $tagswhere, $tagsparams);
-//            } else {
-//                $tagids = $this->tags;
-//            }
-//            list($where, $this->params) = $DB->get_in_or_equal($tagids, SQL_PARAMS_NAMED, 'tag');
-//            $this->where = "(SELECT COUNT(*) as tagcount FROM {tag_instance} ti WHERE itemid=q.id AND tagid $where)=".
-//                       count($this->tags);
-//        }
-//
-//        if (!empty($this->nottags)) {
-//            if (!is_numeric($this->nottags[0])) {
-//                list($tagswhere, $tagsparams) = $DB->get_in_or_equal($this->nottags, SQL_PARAMS_NAMED, 'tag');
-//                $tagids = $DB->get_fieldset_select('tag', 'id', 'name ' . $tagswhere, $tagsparams);
-//            } else {
-//                $tagids = $this->nottags;
-//            }
-//            list($where, $params) = $DB->get_in_or_equal($tagids, SQL_PARAMS_NAMED, 'tag');
-//            if (!empty($this->where)) {
-//                $this->where .= " AND ";
-//            }
-//            $this->where .= "(SELECT COUNT(*) as tagcount FROM {tag_instance} ti WHERE itemid=q.id AND tagid $where)=0";
-//            $this->params = array_merge($this->params, $params);
-//        }
 
         if(!empty($this->filters)) {
             $filters = explode("\n", $this->filters);
@@ -164,6 +111,9 @@ class local_searchbytags_question_bank_search_condition extends core_question\ba
                 $filter_type = trim(array_pop($filter_args));
                 $tag = trim($filter_args[0], '"');
                 $args = array_slice($filter_args, 1);
+                var_dump($tag);
+                var_dump($filter_args);
+                echo "----------------------------";
 
                 $filter = new $filter_type($tag, $args);
                 $where = $filter->apply_filter();
@@ -209,135 +159,5 @@ class local_searchbytags_question_bank_search_condition extends core_question\ba
         asort($meta_tags);
 
         return $meta_tags;
-    }
-
-    private function filter_loc() {
-        global $DB;
-
-        $catId = explode(",", optional_param('category', '', PARAM_TEXT))[0];
-        $result = $DB->get_records_select("question","category = $catId");
-
-        $matching_questions = array();
-        foreach ($result as $question) {
-            $qid = $question->id;
-            $sql = "SELECT t.rawname
-                    FROM {question} q, {tag} t, {tag_instance} ti
-                    WHERE q.id = ti.itemid AND t.id = ti.tagid AND q.id = ?";
-
-            $tags = $DB->get_records_sql($sql, array($qid));
-
-            $base64_metatag = "";
-            foreach ($tags as $id => $tag) {
-                if (substr($tag->rawname, 0, 4) == "META") {
-                    $base64_metatag .= substr($tag->rawname, 4);
-                }
-            }
-
-            $yaml_metatag = base64_decode($base64_metatag);
-            $metatag = spyc_load($yaml_metatag);
-
-            if (isset($metatag['LOC'])) {
-                if ($this->locfilter == 1) {
-                    if ($metatag['LOC'] > $this->locvalue) {
-                        $matching_questions[] = $qid;
-                    }
-                }
-
-                if ($this->locfilter == 2) {
-                    if ($metatag['LOC'] == $this->locvalue) {
-                        $matching_questions[] = $qid;
-                    }
-                }
-
-                if ($this->locfilter == 3) {
-                    if ($metatag['LOC'] < $this->locvalue) {
-                        $matching_questions[] = $qid;
-                    }
-                }
-            }
-        }
-
-
-        if (!empty($this->where)) {
-            $this->where .= " AND ";
-        }
-
-        if (!empty($matching_questions)) {
-            $where = "q.id ";
-            if (count($matching_questions) == 1){
-                $where .= "= ".$matching_questions[0];
-            }
-            else {
-                $where .= "IN (" . implode(',', $matching_questions) . ")";
-            }
-
-            $this->where .= $where;
-        }
-        else {
-            $this->where .= "q.id IN (-1)";
-        }
-    }
-
-    private function get_tags_used() {
-        global $DB;
-        $categories = $this->get_categories();
-        list($catidtest, $params) = $DB->get_in_or_equal($categories, SQL_PARAMS_NAMED, 'cat');
-        $sql = "SELECT name as value, name as display FROM {tag} WHERE id IN
-                (
-                 SELECT DISTINCT tagi.tagid FROM {tag_instance} tagi, {question}
-                         WHERE itemtype='question' AND {question}.id=tagi.itemid AND category $catidtest
-                )
-                AND name NOT LIKE 'META%'
-                ORDER BY name";
-        return $DB->get_records_sql_menu($sql, $params);
-    }
-
-    protected function get_current_category($categoryandcontext) {
-        global $DB;
-        list($categoryid, $contextid) = explode(',', $categoryandcontext);
-        if (!$categoryid) {
-            return false;
-        }
-
-        if (!$category = $DB->get_record('question_categories',
-                array('id' => $categoryid, 'contextid' => $contextid))) {
-            return false;
-        }
-        return $category;
-    }
-
-    private function get_categories() {
-        $cmid = optional_param('cmid', 0, PARAM_INT);
-        $categoryparam = optional_param('category', '', PARAM_TEXT);
-        $courseid = optional_param('courseid', 0, PARAM_INT);
-
-        if ($cmid) {
-            list($thispageurl, $contexts, $cmid, $cm, $quiz, $pagevars) = question_edit_setup('editq', '/mod/quiz/edit.php', true);
-            if ($pagevars['cat']) {
-                $categoryparam = $pagevars['cat'];
-            }
-        }
-
-        if ($categoryparam) {
-            $catandcontext = explode(',', $categoryparam);
-            $cats = question_categorylist($catandcontext[0]);
-            return $cats;
-        } else if ($cmid) {
-            list($module, $cm) = get_module_from_cmid($cmid);
-            $courseid = $cm->course;
-            require_login($courseid, false, $cm);
-            $thiscontext = context_module::instance($cmid);
-        } else {
-            $module = null;
-            $cm = null;
-            if ($courseid) {
-                $thiscontext = context_course::instance($courseid);
-            } else {
-                $thiscontext = null;
-            }
-        }
-
-        $cats = get_categories_for_contexts($thiscontext->id);
-        return array_keys($cats);
     }
 }
