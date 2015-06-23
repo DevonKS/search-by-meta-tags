@@ -64,9 +64,10 @@ NS.show_filter_controls = function() {
 NS.show_exists_filter_controls = function (operator) {
     var submit_button = Y.Node.create('<button>Save Filter</button>');
     submit_button.on('click', function(){
-        var filter_text = '"' + Y.one('#filter_combobox').get('value') + '" ' + operator + ' ExistsFilter';
+        var filter_text = '"' + Y.one('#filter_combobox').get('value') + '" ' + operator + ' ExistsFilter&#13;&#10;';
 
-        Y.one('#current_filters').append(filter_text + '&#13;&#10;');
+        var current_filters = Y.one('#current_filters').get('value');
+        Y.one('#current_filters').set('value', current_filters + filter_text);
     });
 
     Y.one('#filter_type_controls').append('<br>');
@@ -80,9 +81,10 @@ NS.show_text_filter_controls = function (operator) {
     var submit_button = Y.Node.create('<button>Save Filter</button>');
     submit_button.on('click', function(){
         var filter_text = '"' + Y.one('#filter_combobox').get('value') +
-                          '" ' + operator + ' "' + value.get('value') + '" TextFilter';
+                          '" ' + operator + ' "' + value.get('value') + '" TextFilter&#13;&#10;';
 
-        Y.one('#current_filters').append(filter_text + '&#13;&#10;');
+        var current_filters = Y.one('#current_filters').get('value');
+        Y.one('#current_filters').set('value', current_filters + filter_text);
     });
 
     Y.one('#filter_type_controls').append(label);
@@ -97,9 +99,10 @@ NS.show_numeric_filter_controls = function (operator) {
     var submit_button = Y.Node.create('<button>Save Filter</button>');
     submit_button.on('click', function() {
         var filter_text = '"' + Y.one('#filter_combobox').get('value') +
-                          '" ' + operator + ' ' + value.get('value') + ' NumberFilter';
+                          '" ' + operator + ' ' + value.get('value') + ' NumberFilter&#13;&#10;';
 
-        Y.one('#current_filters').append(filter_text + '&#13;&#10;');
+        var current_filters = Y.one('#current_filters').get('value');
+        Y.one('#current_filters').set('value', current_filters + filter_text);
     });
 
     Y.one('#filter_type_controls').append(value);

@@ -71,9 +71,9 @@ class local_searchbytags_question_bank_search_condition extends core_question\ba
 
         echo "<br />\n";
         echo html_writer::label('Current Filters:', 'filters');
-        echo "<textarea name='filters' rows='4' cols='50' id='current_filters'>$this->filters</textarea>";
+        echo "<textarea name='filters' class='searchoptions' rows='4' cols='50' id='current_filters'>$this->filters</textarea>";
 
-        echo "<br>";
+        echo "<br />\n";
         echo html_writer::label('Add Filter:', 'filter_name');
         echo html_writer::empty_tag('input', array('id' => 'filter_name'));
         echo "<div id='filter_controls'><select id='filter_combobox' style='width: 210px' size='4'>";
@@ -94,14 +94,12 @@ class local_searchbytags_question_bank_search_condition extends core_question\ba
 
         echo html_writer::select($filters, 'filter','', array('' => 'choosedots'),array('id' => 'filter_type'));
 
-        echo"<div id='filter_type_controls'></div></div>";
+        echo"<div id='filter_type_controls'></div></div><br />\n";
 
         $PAGE->requires->yui_module('moodle-local_searchbytags-filter', 'M.local_searchbytags.filter.init');
     }
 
     private function init() {
-        global $DB;
-
         if(!empty($this->filters)) {
             $filters = explode("\n", $this->filters);
             array_pop($filters); //The last element of the filters array is always and empty string
@@ -111,9 +109,6 @@ class local_searchbytags_question_bank_search_condition extends core_question\ba
                 $filter_type = trim(array_pop($filter_args));
                 $tag = trim($filter_args[0], '"');
                 $args = array_slice($filter_args, 1);
-                var_dump($tag);
-                var_dump($filter_args);
-                echo "----------------------------";
 
                 $filter = new $filter_type($tag, $args);
                 $where = $filter->apply_filter();
