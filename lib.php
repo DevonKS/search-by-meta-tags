@@ -68,6 +68,7 @@ class local_searchbytags_question_bank_search_condition extends core_question\ba
         global $PAGE;
 
         $meta_tags = $this->get_meta_tags();
+        var_dump($meta_tags);
 
         echo "<br />\n";
         echo html_writer::label('Current Filters:', 'filters');
@@ -151,6 +152,8 @@ class local_searchbytags_question_bank_search_condition extends core_question\ba
         }
 
         $meta_tags = array_unique($meta_tags);
+        $question_attributes = array('$Question Category', '$Question Text', '$Question Answer');
+        $meta_tags = array_merge($meta_tags, $question_attributes);
         asort($meta_tags);
 
         return $meta_tags;
