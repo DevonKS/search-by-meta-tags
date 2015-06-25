@@ -30,8 +30,15 @@ class ExistsFilter extends AbstractFilter {
         }
     }
 
-    protected function filter($metatag)
+    public function filter($array)
     {
-        return isset($metatag[$this->filter_tag]) == $this->exists;
+        $matching_questions = array();
+        foreach ($array as $id => $question) {
+            if (isset($question[$this->filter_tag]) == $this->exists) {
+                $matching_questions[] = $id;
+            }
+        }
+
+        return $matching_questions;
     }
 }

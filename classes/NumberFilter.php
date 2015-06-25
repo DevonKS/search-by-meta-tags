@@ -27,19 +27,27 @@ class NumberFilter extends AbstractFilter {
         $this->value = $args[1];
     }
 
-    protected function filter($metatag)
+    public function filter($array)
     {
-        if (isset($metatag[$this->filter_tag])) {
+        $matching_questions = array();
+        foreach ($array as $id => $value) {
+            $matches = false;
             if ($this->operator == '<') {
-                return $metatag[$this->filter_tag] < $this->value;
+                $matches = $value < $this->value;
+            } else if ($this->operator == '<=') {
+                $matches =  $value <= $this->value;
+            } else if ($this->operator == '=') {
+                $matches =  $value = $this->value;
+            } else if ($this->operator == '>') {
+                $matches =  $value > $this->value;
+            } else if ($this->operator == '>=') {
+                $matches =  $value >= $this->value;
             }
-            else if ($this->operator == '=') {
-                return $metatag[$this->filter_tag] = $this->value;
-            }
-            else if ($this->operator == '>') {
-                return $metatag[$this->filter_tag] > $this->value;
+
+            if ($matches) {
+                $matching_questions[] = $id;
             }
         }
-        return false;
+        return $matching_questions;
     }
 }

@@ -21,6 +21,8 @@ include_once($CFG->dirroot . '/local/searchbytags/yaml_parser/spyc.php');
 include_once($CFG->dirroot . '/local/searchbytags/classes/ExistsFilter.php');
 include_once($CFG->dirroot . '/local/searchbytags/classes/TextFilter.php');
 include_once($CFG->dirroot . '/local/searchbytags/classes/NumberFilter.php');
+include_once($CFG->dirroot . '/local/searchbytags/classes/QuestionAttributeFilter.php');
+include_once($CFG->dirroot . '/local/searchbytags/classes/MetatagFilter.php');
 
 function local_searchbytags_get_question_bank_search_conditions($caller) {
     return array( new local_searchbytags_question_bank_search_condition($caller));
@@ -40,6 +42,8 @@ class local_searchbytags_question_bank_search_condition extends core_question\ba
     protected $filters;
 
     public function __construct() {
+        error_reporting(E_ALL);
+        ini_set('display_errors', 1);
         $this->filters = optional_param('filters', '', PARAM_TEXT);
 
         if (!empty($this->filters)) {
@@ -68,7 +72,6 @@ class local_searchbytags_question_bank_search_condition extends core_question\ba
         global $PAGE;
 
         $meta_tags = $this->get_meta_tags();
-        var_dump($meta_tags);
 
         echo "<br />\n";
         echo html_writer::label('Current Filters:', 'filters');
@@ -111,7 +114,13 @@ class local_searchbytags_question_bank_search_condition extends core_question\ba
                 $tag = trim($filter_args[0], '"');
                 $args = array_slice($filter_args, 1);
 
-                $filter = new $filter_type($tag, $args);
+                $filter_type = new $filter_type($tag, $args);
+                if ($tag[0] == "$") {
+                    $filter = new QuestionAttributeFilter(substr($tag, 1), $filter_type);
+                }
+                else {
+                    $filter = new MetatagFilter($tag, $filter_type);
+                }
                 $where = $filter->apply_filter();
 
                 if (!empty($this->where)) {

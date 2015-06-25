@@ -33,11 +33,15 @@ class TextFilter extends AbstractFilter {
         $this->filter_text = trim(array_pop($args), '"');
     }
 
-    protected function filter($metatag)
+    public function filter($array)
     {
-        if (isset($metatag[$this->filter_tag])) {
-            return strpos($metatag[$this->filter_tag], $this->filter_text) == $this->contains;
+        $matching_questions = array();
+        foreach ($array as $id => $value) {
+            if (strpos($value, $this->filter_text) == $this->contains){
+                $matching_questions[] = $id;
+            }
         }
-        return  false;
+
+        return $matching_questions;
     }
 }
