@@ -20,12 +20,30 @@ abstract class QuestionFilter {
     protected $filter_type;
 
     public function apply_filter() {
-        $questions = $this->get_question_data();
+        $catId = explode(",", optional_param('category', '', PARAM_TEXT))[0];
+        $questions = $this->get_questions($catId);
+        $questions = $this->format_questions($questions);
 
         $matching_questions = $this->filter_type->filter($questions);
 
         return $this->get_where_statement($matching_questions);
     }
+
+    private function get_questions($catId)
+    {
+        global $DB;
+
+        $questions = $DB->get_records_select("question", "category = $catId");
+
+        $children_categories = $DB->get_records_select('question_categories', "parent = $catId", array(), '', 'id');
+        foreach ($children_categories as $child) {
+            $questions = array_merge($questions, $this->get_questions($child->id));
+        }
+
+        return $questions;
+    }
+
+    abstract protected function format_questions($questions);
 
     protected function get_where_statement($matching_questions) {
         $where = '';
@@ -45,7 +63,5 @@ abstract class QuestionFilter {
 
         return $where;
     }
-
-    abstract protected function get_question_data();
 
 }

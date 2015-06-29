@@ -51,6 +51,35 @@ class local_searchbytags_question_bank_search_condition extends core_question\ba
         }
     }
 
+    private function init()
+    {
+        if (!empty($this->filters)) {
+            $filters = explode("\n", $this->filters);
+            array_pop($filters); //The last element of the filters array is always and empty string
+
+            foreach ($filters as $filter_string) {
+                $filter_args = explode(" ", $filter_string);
+                $filter_type = trim(array_pop($filter_args));
+                $tag = trim($filter_args[0], '"');
+                $args = array_slice($filter_args, 1);
+                $filter_type = new $filter_type($tag, $args);
+
+                if ($tag[0] == "$") {
+                    $filter = new QuestionAttributeFilter(substr($tag, 1), $filter_type);
+                } else {
+                    $filter = new MetatagFilter($tag, $filter_type);
+                }
+                $where = $filter->apply_filter();
+
+                if (!empty($this->where)) {
+                    $this->where .= " AND ";
+                }
+
+                $this->where .= $where;
+            }
+        }
+    }
+
     public function where() {
         return $this->where;
     }
@@ -66,7 +95,6 @@ class local_searchbytags_question_bank_search_condition extends core_question\ba
 
         $this->display_add_filter_controls();
     }
-
 
     private function display_add_filter_controls() {
         global $PAGE;
@@ -103,35 +131,6 @@ class local_searchbytags_question_bank_search_condition extends core_question\ba
         $PAGE->requires->yui_module('moodle-local_searchbytags-filter', 'M.local_searchbytags.filter.init');
     }
 
-    private function init() {
-        if(!empty($this->filters)) {
-            $filters = explode("\n", $this->filters);
-            array_pop($filters); //The last element of the filters array is always and empty string
-
-            foreach ($filters as $filter_string) {
-                $filter_args = explode(" ", $filter_string);
-                $filter_type = trim(array_pop($filter_args));
-                $tag = trim($filter_args[0], '"');
-                $args = array_slice($filter_args, 1);
-
-                $filter_type = new $filter_type($tag, $args);
-                if ($tag[0] == "$") {
-                    $filter = new QuestionAttributeFilter(substr($tag, 1), $filter_type);
-                }
-                else {
-                    $filter = new MetatagFilter($tag, $filter_type);
-                }
-                $where = $filter->apply_filter();
-
-                if (!empty($this->where)) {
-                    $this->where .= " AND ";
-                }
-
-                $this->where .= $where;
-            }
-        }
-    }
-
     private function get_meta_tags(){
         global $DB;
 
@@ -161,7 +160,7 @@ class local_searchbytags_question_bank_search_condition extends core_question\ba
         }
 
         $meta_tags = array_unique($meta_tags);
-        $question_attributes = array('$Question Category', '$Question Text', '$Question Answer');
+        $question_attributes = array('$QuestionCategory', '$QuestionText');
         $meta_tags = array_merge($meta_tags, $question_attributes);
         asort($meta_tags);
 

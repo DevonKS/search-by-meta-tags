@@ -25,45 +25,44 @@ class MetatagFilter extends QuestionFilter{
         $this->filter_type = $filter_type;
     }
 
-    private function get_question_metatags($catId) {
+    protected function format_questions($questions)
+    {
+        $formatted_questions = array();
+        foreach ($questions as $question) {
+            $metatags = $this->get_question_metatags($question->id);
+            $formatted_questions[$question->id] = $metatags;
+        }
+
+        return $formatted_questions;
+    }
+
+    private function get_question_metatags($qid)
+    {
         global $DB;
 
-        $result = $DB->get_records_select("question","category = $catId");
+        $sql = "SELECT t.rawname
+                FROM {question} q, {tag} t, {tag_instance} ti
+                WHERE q.id = ti.itemid AND t.id = ti.tagid AND q.id = ?";
 
-        $metatags = array();
-        foreach ($result as $question) {
-            $qid = $question->id;
-            $sql = "SELECT t.rawname
-                    FROM {question} q, {tag} t, {tag_instance} ti
-                    WHERE q.id = ti.itemid AND t.id = ti.tagid AND q.id = ?";
-
-            $tags = $DB->get_records_sql($sql, array($qid));
-            $base64_metatag = "";
-            foreach ($tags as $id => $tag_part) {
-                if (substr($tag_part->rawname, 0, 4) == "META") {
-                    $base64_metatag .= substr($tag_part->rawname, 4);
-                }
-            }
-
-            $yaml_metatag = base64_decode($base64_metatag);
-            $metatag = spyc_load($yaml_metatag);
-
-            if (is_a($this->filter_type, 'ExistsFilter')) {
-                $metatags[$qid] = $metatag;
-            }
-            else {
-                $value = '';
-                if (isset($metatag[$this->filter_tag])) $value = $metatag[$this->filter_tag];
-                $metatags[$qid] = $value;
+        $tags = $DB->get_records_sql($sql, array($qid));
+        $base64_metatag = "";
+        foreach ($tags as $id => $tag_part) {
+            if (substr($tag_part->rawname, 0, 4) == "META") {
+                $base64_metatag .= substr($tag_part->rawname, 4);
             }
         }
 
-        return $metatags;
-    }
+        $yaml_metatag = base64_decode($base64_metatag);
+        $metatag = spyc_load($yaml_metatag);
 
-    protected function get_question_data()
-    {
-        $catId = explode(",", optional_param('category', '', PARAM_TEXT))[0];
-        return $this->get_question_metatags($catId);
+        if (is_a($this->filter_type, 'ExistsFilter')) {
+            $metatags[$qid] = $metatag;
+        } else {
+            $value = '';
+            if (isset($metatag[$this->filter_tag])) $value = $metatag[$this->filter_tag];
+            $metatags[$qid] = $value;
+        }
+
+        return $metatags;
     }
 }

@@ -37,7 +37,7 @@ class TextFilter extends AbstractFilter {
     {
         $matching_questions = array();
         foreach ($array as $id => $value) {
-            if (strpos($value, $this->filter_text) == $this->contains){
+            if (is_int(strpos($value, $this->filter_text)) == $this->contains) {
                 $matching_questions[] = $id;
             }
         }

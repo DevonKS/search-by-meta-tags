@@ -25,28 +25,44 @@ class QuestionAttributeFilter extends QuestionFilter{
         $this->filter_type = $filter_type;
     }
 
-    protected function get_question_data()
+    protected function format_questions($questions)
+    {
+        $formatted_questions = array();
+        if ($this->attribute == 'QuestionCategory') {
+            $category_trees = array();
+            foreach ($questions as $question) {
+                $category = $question->category;
+                if (!isset($category_trees[$category])) {
+                    $category_tree = $this->get_category_tree($category);
+                    $category_trees[$category] = $category_tree;
+                } else {
+                    $category_tree = $category_trees[$category];
+                }
+                $formatted_questions[$question->id] = $category_tree;
+            }
+        } else {
+            $this->attribute = strtolower($this->attribute);
+            $attribute = $this->attribute;
+            foreach ($questions as $question) {
+                $formatted_questions[$question->id] = $question->$attribute;
+            }
+        }
+
+        return $formatted_questions;
+    }
+
+    private function get_category_tree($category)
     {
         global $DB;
 
-        $catId = explode(",", optional_param('category', '', PARAM_TEXT))[0];
-        $questions = array();
-        if ($this->attribute == 'category') {
-            $current_questions = $DB->get_records_select('context', array('category' => $catId), $fields = 'category,'.$this->attribute);
-            foreach ($current_questions as $id => $current_question) {
-                $category_path = $DB->get_record_select('context', array('id' => $current_question->category),$fields='path');
-                $categories = array_slice (explode('/', $category_path), 1);
-                $category_string = '';
-                foreach ($categories as $category) {
-                    $category_string .= $DB->get_record_select('categories', array('id' => $category), $field='name');
-                }
-                $questions[$id] = $category_string;
-            }
-        }
-        else {
-            $questions = $DB->get_records_select('context', array('category' => $catId), $fields = $this->attribute);
+        $current_category = $category;
+        $category_tree = array();
+        while ($current_category != 0) {
+            $category = $DB->get_record_select('question_categories', "id = $current_category", array(), $fields = 'id, name, parent');
+            $category_tree[$category->id] = $category->name;
+            $current_category = $category->parent;
         }
 
-        return $questions;
+        return implode('->', $category_tree);
     }
 }
