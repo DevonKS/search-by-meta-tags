@@ -24,18 +24,18 @@ include_once($CFG->dirroot . '/local/searchbymetatags/classes/NumberFilter.php')
 include_once($CFG->dirroot . '/local/searchbymetatags/classes/QuestionAttributeFilter.php');
 include_once($CFG->dirroot . '/local/searchbymetatags/classes/MetatagFilter.php');
 
-function local_searchbymetatags_get_question_bank_search_conditions($caller) {
-    return array( new local_searchbymetatags_question_bank_search_condition($caller));
+function local_searchbytags_get_question_bank_search_conditions($caller) {
+    return array( new local_searchbytags_question_bank_search_condition($caller));
 }
 
-function local_searchbymetatags_question_bank_column_types($questionbankview) {
+function local_searchbytags_question_bank_column_types($questionbankview) {
     if ($questionbankview == 'quiz_question_bank_view') {
         return array();
     }
-    return array('tags' => new local_searchbymetatags_question_bank_column($questionbankview));
+    return array('tags' => new local_searchbytags_question_bank_column($questionbankview));
 }
 
-class local_searchbymetatags_question_bank_search_condition extends core_question\bank\search\condition {
+class local_searchbytags_question_bank_search_condition extends core_question\bank\search\condition {
     protected $tags;
     protected $where;
     protected $params;
