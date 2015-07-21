@@ -40,6 +40,17 @@ class QuestionAttributeFilter extends QuestionFilter{
                 }
                 $formatted_questions[$question->id] = $category_tree;
             }
+        } else if ($this->attribute == 'QuestionAnswer') {
+            global $DB;
+
+            foreach ($questions as $question) {
+                $answers = $DB->get_records_select('question_answers', "question = $question->id");
+                $answer_text = '';
+                foreach ($answers as $answer) {
+                    $answer_text .= $answer->answer;
+                }
+                $formatted_questions[$question->id] = $answer_text;
+            }
         } else {
             $this->attribute = strtolower($this->attribute);
             $attribute = $this->attribute;
