@@ -33,16 +33,16 @@ NS.show_filter_controls = function() {
     Y.all('#filter_type_controls > *').remove();
 
     if (filter_type === "exists") {
-        NS.show_exists_filter_controls('exists');
+        NS.show_exists_filter_controls('Exists');
     }
     else if (filter_type === "not exist") {
-        NS.show_exists_filter_controls('doesn\'t exist');
+        NS.show_exists_filter_controls('Doesn\'t Exist');
     }
     else if (filter_type === "contains") {
-        NS.show_text_filter_controls('contains');
+        NS.show_text_filter_controls('Contains:');
     }
     else if (filter_type === "not contain") {
-        NS.show_text_filter_controls('doesn\'t contain');
+        NS.show_text_filter_controls('Doesn\'t Contain:');
     }
     else if (filter_type === "greater than") {
         NS.show_numeric_filter_controls('>');
@@ -62,7 +62,7 @@ NS.show_filter_controls = function() {
 };
 
 NS.show_exists_filter_controls = function (operator) {
-    var submit_button = Y.Node.create('<button>Save Filter</button>');
+    var submit_button = Y.Node.create('<button>Add Filter</button>');
     submit_button.on('click', function(){
         var filter_text = '"' + Y.one('#filter_combobox').get('value') + '" ' + operator + ' ExistsFilter\n';
 
@@ -70,15 +70,14 @@ NS.show_exists_filter_controls = function (operator) {
         Y.one('#current_filters').set('value', current_filters + filter_text);
     });
 
-    Y.one('#filter_type_controls').append('<br>');
     Y.one('#filter_type_controls').append(submit_button);
 };
 
 NS.show_text_filter_controls = function (operator) {
     var label = Y.Node.create('<label for="value">' + operator + '</label>');
-    var value = Y.Node.create('<input type="text" name="value" id="value" />');
+    var value = Y.Node.create('<input name="value" id="value" />');
 
-    var submit_button = Y.Node.create('<button>Save Filter</button>');
+    var submit_button = Y.Node.create('<button>Add Filter</button>');
     submit_button.on('click', function(){
         var filter_text = '"' + Y.one('#filter_combobox').get('value') +
                           '" ' + operator + ' "' + value.get('value') + '" TextFilter\n';
@@ -89,14 +88,13 @@ NS.show_text_filter_controls = function (operator) {
 
     Y.one('#filter_type_controls').append(label);
     Y.one('#filter_type_controls').append(value);
-    Y.one('#filter_type_controls').append('<br>');
     Y.one('#filter_type_controls').append(submit_button);
 };
 
 NS.show_numeric_filter_controls = function (operator) {
     var value = Y.Node.create('<input name="value" />');
 
-    var submit_button = Y.Node.create('<button>Save Filter</button>');
+    var submit_button = Y.Node.create('<button>Add Filter</button>');
     submit_button.on('click', function() {
         var filter_text = '"' + Y.one('#filter_combobox').get('value') +
                           '" ' + operator + ' ' + value.get('value') + ' NumberFilter\n';
@@ -106,6 +104,5 @@ NS.show_numeric_filter_controls = function (operator) {
     });
 
     Y.one('#filter_type_controls').append(value);
-    Y.one('#filter_type_controls').append('<br>');
     Y.one('#filter_type_controls').append(submit_button);
 };
