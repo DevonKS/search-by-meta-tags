@@ -45,22 +45,26 @@ class MetatagFilter extends QuestionFilter{
                 WHERE q.id = ti.itemid AND t.id = ti.tagid AND q.id = ?";
 
         $tags = $DB->get_records_sql($sql, array($qid));
-        $base64_metatag = "";
+        $meta_tag = "";
         foreach ($tags as $id => $tag_part) {
-            if (substr($tag_part->rawname, 0, 4) == "META") {
-                $base64_metatag .= substr($tag_part->rawname, 4);
+            if (substr($tag_part->rawname, 0, 5) == "meta;") {
+                $meta_tag_data = explode(';', $tag_part->rawname);
+                if ($meta_tag_data[1] == 'Base64') {
+                    $meta_tag .= "\n" . base64_decode($meta_tag_data[2]);
+                } else if ($meta_tag_data[1] == '') {
+                    $meta_tag .= "\n" . $meta_tag_data[2];
+                }
             }
         }
 
-        $yaml_metatag = base64_decode($base64_metatag);
-        $metatag = spyc_load($yaml_metatag);
+        $meta_tag = spyc_load($meta_tag);
 
         if (is_a($this->filter_type, 'ExistsFilter')) {
-            $metatags[$qid] = $metatag;
+            $metatags = $meta_tag;
         } else {
             $value = '';
-            if (isset($metatag[$this->filter_tag])) $value = $metatag[$this->filter_tag];
-            $metatags[$qid] = $value;
+            if (isset($meta_tag[$this->filter_tag])) $value = $meta_tag[$this->filter_tag];
+            $metatags = $value;
         }
 
         return $metatags;

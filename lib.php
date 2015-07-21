@@ -102,17 +102,18 @@ class local_searchbymetatags_question_bank_search_condition extends core_questio
         $meta_tags = $this->get_meta_tags();
 
         echo "<br />\n";
-        echo html_writer::label('Current Filters:', 'filters');
+        echo '<h4>Current Filters</h4>';
         echo "<textarea name='filters' class='searchoptions' rows='4' cols='50' id='current_filters'>$this->filters</textarea>";
 
         echo "<br />\n";
-        echo html_writer::label('Add Filter:', 'filter_name');
+        echo '<div id="filter_controls"><h4>Add Filter</h4><div id="filter_attribute" style="float:left;width:250px">';
+        echo html_writer::label('Filter Attribute:', 'filter_name');
         echo html_writer::empty_tag('input', array('id' => 'filter_name'));
-        echo "<div id='filter_controls'><select id='filter_combobox' style='width: 210px' size='4'>";
+        echo "<select id='filter_combobox' style='width: 210px' size='4'>";
         foreach ($meta_tags as $meta_tag) {
             echo "<option value='$meta_tag'>$meta_tag</option>";
         }
-        echo "</select>";
+        echo "</select></div>";
 
         $filters = array("exists" => "Exists",
             "not exist" => "Doesn't Exist",
@@ -124,9 +125,10 @@ class local_searchbymetatags_question_bank_search_condition extends core_questio
             "less than equal" => "Less Than or Equal To",
             "equal" => "Equal To");
 
+        echo "<div id='filter_controls'>";
+        echo html_writer::label('Filter Type', 'filter_type');
         echo html_writer::select($filters, 'filter','', array('' => 'choosedots'),array('id' => 'filter_type'));
-
-        echo"<div id='filter_type_controls'></div></div><br />\n";
+        echo "<div id='filter_type_controls'></div></div>";
 
         $PAGE->requires->yui_module('moodle-local_searchbytags-filter', 'M.local_searchbytags.filter.init');
     }
@@ -145,22 +147,26 @@ class local_searchbymetatags_question_bank_search_condition extends core_questio
 
             $tags = $DB->get_records_sql($sql, array($qid));
 
-            $base64_metatag = "";
+            $meta_tag = "";
             foreach ($tags as $id => $tag) {
-                if (substr($tag->rawname, 0, 4) == "META") {
-                    $base64_metatag .= substr($tag->rawname, 4);
+                if (substr($tag->rawname, 0, 5) == "meta;") {
+                    $meta_tag_data = explode(';', $tag->rawname);
+                    if ($meta_tag_data[1] == 'Base64') {
+                        $meta_tag .= "\n" . base64_decode($meta_tag_data[2]);
+                    } else if ($meta_tag_data[1] == '') {
+                        $meta_tag .= "\n" . $meta_tag_data[2];
+                    }
                 }
             }
 
-            $yaml_metatag = base64_decode($base64_metatag);
-            if ($yaml_metatag != '') {
-                $meta_tag = spyc_load($yaml_metatag);
+            if ($meta_tag != '') {
+                $meta_tag = spyc_load($meta_tag);
                 $meta_tags = array_merge($meta_tags, array_keys($meta_tag));
             }
         }
 
         $meta_tags = array_unique($meta_tags);
-        $question_attributes = array('$QuestionCategory', '$QuestionText');
+        $question_attributes = array('$QuestionCategory', '$QuestionText', '$QuestionAnswer');
         $meta_tags = array_merge($meta_tags, $question_attributes);
         asort($meta_tags);
 
