@@ -1,0 +1,10 @@
+{
+  "name": "moodle-local_searchbymetatags-meta_filter",
+  "builds": {
+    "moodle-local_searchbymetatags-meta_filter": {
+      "jsfiles": [
+        "filter.js"
+      ]
+    }
+  }
+}

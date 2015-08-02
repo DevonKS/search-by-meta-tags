@@ -2,10 +2,10 @@
  * Created by Devon on 6/4/2015.
  */
 
-M.local_searchbytags = M.local_searchbytags || {};
-var NS = M.local_searchbytags.filter = {};
+M.local_searchbymetatags = M.local_searchbymetatags || {};
+var NS = M.local_searchbymetatags.meta_filter = {};
 
-NS.init = function() {
+NS.init = function () {
     console.log('filter JS started');
     Y.one(Y.config.doc).delegate('input', this.filter_combobox, '#filter_name');
 
@@ -13,7 +13,7 @@ NS.init = function() {
     this.originals = Y.all('#filter_combobox > *');
 };
 
-NS.filter_combobox = function() {
+NS.filter_combobox = function () {
     var text = Y.one('#filter_name').get('value');
     var combo_box = Y.all('#filter_combobox');
 
@@ -27,7 +27,7 @@ NS.filter_combobox = function() {
     });
 };
 
-NS.show_filter_controls = function() {
+NS.show_filter_controls = function () {
     var filter_type = Y.one('#filter_type').get('value');
 
     Y.all('#filter_type_controls > *').remove();
@@ -63,7 +63,7 @@ NS.show_filter_controls = function() {
 
 NS.show_exists_filter_controls = function (operator) {
     var submit_button = Y.Node.create('<button>Add Filter</button>');
-    submit_button.on('click', function(){
+    submit_button.on('click', function () {
         var filter_text = '"' + Y.one('#filter_combobox').get('value') + '" ' + operator + ' ExistsFilter\n';
 
         var current_filters = Y.one('#current_filters').get('value');
@@ -78,9 +78,9 @@ NS.show_text_filter_controls = function (operator) {
     var value = Y.Node.create('<input name="value" id="value" />');
 
     var submit_button = Y.Node.create('<button>Add Filter</button>');
-    submit_button.on('click', function(){
+    submit_button.on('click', function () {
         var filter_text = '"' + Y.one('#filter_combobox').get('value') +
-                          '" ' + operator + ' "' + value.get('value') + '" TextFilter\n';
+            '" ' + operator + ' "' + value.get('value') + '" TextFilter\n';
 
         var current_filters = Y.one('#current_filters').get('value');
         Y.one('#current_filters').set('value', current_filters + filter_text);
@@ -95,9 +95,9 @@ NS.show_numeric_filter_controls = function (operator) {
     var value = Y.Node.create('<input name="value" />');
 
     var submit_button = Y.Node.create('<button>Add Filter</button>');
-    submit_button.on('click', function() {
+    submit_button.on('click', function () {
         var filter_text = '"' + Y.one('#filter_combobox').get('value') +
-                          '" ' + operator + ' ' + value.get('value') + ' NumberFilter\n';
+            '" ' + operator + ' ' + value.get('value') + ' NumberFilter\n';
 
         var current_filters = Y.one('#current_filters').get('value');
         Y.one('#current_filters').set('value', current_filters + filter_text);

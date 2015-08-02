@@ -1,5 +1,5 @@
 {
-  "moodle-local_searchbytags-filter": {
+  "moodle-local_searchbymetatags-meta_filter": {
     "requires": [
       "base",
       "node"
