@@ -22,7 +22,7 @@ class ExistsFilter extends AbstractFilter {
     public function __construct($tag, $args) {
         $this->filter_tag = $tag;
 
-        if ($args[0] == "doesn't") {
+        if ($args[0] == "Doesn't") {
             $this->exists = false;
         }
         else {
