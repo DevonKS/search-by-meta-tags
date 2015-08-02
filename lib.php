@@ -129,8 +129,7 @@ class local_searchbymetatags_question_bank_search_condition extends core_questio
         echo html_writer::label('Filter Type', 'filter_type');
         echo html_writer::select($filters, 'filter','', array('' => 'choosedots'),array('id' => 'filter_type'));
         echo "<div id='filter_type_controls'></div></div>";
-
-        $PAGE->requires->yui_module('moodle-local_searchbytags-filter', 'M.local_searchbytags.filter.init');
+        $PAGE->requires->yui_module('moodle-local_searchbymetatags-meta_filter', 'M.local_searchbymetatags.meta_filter.init');
     }
 
     private function get_meta_tags(){
