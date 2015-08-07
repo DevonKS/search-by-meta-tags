@@ -29,6 +29,7 @@ NS.filter_combobox = function () {
 
 NS.show_filter_controls = function () {
     var filter_type = Y.one('#filter_type').get('value');
+    console.log(filter_type);
 
     Y.all('#filter_type_controls > *').remove();
 

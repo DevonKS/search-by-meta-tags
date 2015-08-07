@@ -44,7 +44,7 @@ class local_searchbymetatags_question_bank_search_condition extends core_questio
     public function __construct() {
         error_reporting(E_ALL);
         ini_set('display_errors', 1);
-        $this->filters = optional_param('filters', '', PARAM_TEXT);
+        $this->filters = optional_param('filters', '', PARAM_RAW);
 
         if (!empty($this->filters)) {
             $this->init();
@@ -153,12 +153,17 @@ class local_searchbymetatags_question_bank_search_condition extends core_questio
                     if ($meta_tag_data[1] == 'Base64') {
                         $meta_tag .= "\n" . base64_decode($meta_tag_data[2]);
                     } else if ($meta_tag_data[1] == '') {
-                        $meta_tag .= "\n" . $meta_tag_data[2];
+                        if ($meta_tag == '') {
+                            $meta_tag .= $meta_tag_data[2];
+                        } else {
+                            $meta_tag .= "\n" . $meta_tag_data[2];
+                        }
                     }
                 }
             }
 
             if ($meta_tag != '') {
+                $meta_tag .= "\n";
                 $meta_tag = spyc_load($meta_tag);
                 $meta_tags = array_merge($meta_tags, array_keys($meta_tag));
             }

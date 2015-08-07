@@ -30,18 +30,23 @@ class NumberFilter extends AbstractFilter {
     public function filter($array)
     {
         $matching_questions = array();
+        var_dump($array);
         foreach ($array as $id => $value) {
+            var_dump($id);
+            var_dump($value);
             $matches = false;
-            if ($this->operator == '<') {
-                $matches = $value < $this->value;
-            } else if ($this->operator == '<=') {
-                $matches =  $value <= $this->value;
-            } else if ($this->operator == '=') {
-                $matches =  $value = $this->value;
-            } else if ($this->operator == '>') {
-                $matches =  $value > $this->value;
-            } else if ($this->operator == '>=') {
-                $matches =  $value >= $this->value;
+            if ($value != "") {
+                if ($this->operator == '<') {
+                    $matches = $value < $this->value;
+                } else if ($this->operator == '<=') {
+                    $matches = $value <= $this->value;
+                } else if ($this->operator == '=') {
+                    $matches = $value == $this->value;
+                } else if ($this->operator == '>') {
+                    $matches = $value > $this->value;
+                } else if ($this->operator == '>=') {
+                    $matches = $value >= $this->value;
+                }
             }
 
             if ($matches) {
