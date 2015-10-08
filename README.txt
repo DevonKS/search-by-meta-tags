@@ -1,10 +1,7 @@
 This plugin isn't yet ready for the plugins directory because classes/question_bank_column.php has MS SQL specific SQL.
 
 Installation
-there are two ways to install searchbymetatags
-
-1. Download just the searchbymetatags.zip and unzip it in the directory <moodle>/local.
-2. Clone the entire repository into the directory <moodle>/local and then run shifter to
+1. Clone the entire repository into the directory <moodle>/local and then run shifter to
    build the javascript. The commands to achieve this on a linux machine are (provided
    you have shifter installed):
 
@@ -25,3 +22,8 @@ there are two ways to install searchbymetatags
    sudo apt-get install nodejs npm
    sudo npm install
    sudo npm install -g grunt-cli
+
+2. The plugin requires the Yaml PHP extension. The command to install this on a linux machine are:
+
+   sudo apt-get install libyaml-dev
+   sudo pecl install yaml
