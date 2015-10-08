@@ -28,7 +28,11 @@ class QuestionAttributeFilter extends QuestionFilter{
     protected function format_questions($questions)
     {
         $formatted_questions = array();
-        if ($this->attribute == 'QuestionCategory') {
+        if ($this->attribute == 'QuestionName') {
+            foreach ($questions as $question) {
+                $formatted_questions[$question->id] = $question->name;
+            }
+        } else if ($this->attribute == 'QuestionCategory') {
             $category_trees = array();
             foreach ($questions as $question) {
                 $category = $question->category;

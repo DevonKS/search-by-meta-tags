@@ -17,7 +17,6 @@ defined('MOODLE_INTERNAL') || die;
 
 global $CFG;
 require_once($CFG->dirroot . '/question/editlib.php');
-include_once($CFG->dirroot . '/local/searchbymetatags/yaml_parser/Spyc.php');
 include_once($CFG->dirroot . '/local/searchbymetatags/classes/ExistsFilter.php');
 include_once($CFG->dirroot . '/local/searchbymetatags/classes/TextFilter.php');
 include_once($CFG->dirroot . '/local/searchbymetatags/classes/NumberFilter.php');
@@ -47,28 +46,30 @@ class local_searchbymetatags_question_bank_search_condition extends core_questio
     private function init()
     {
         if (!empty($this->filters)) {
+
             $filters = explode("\n", $this->filters);
-            array_pop($filters); //The last element of the filters array is always and empty string
 
             foreach ($filters as $filter_string) {
-                $filter_args = explode(" ", $filter_string);
-                $filter_type = trim(array_pop($filter_args));
-                $tag = trim($filter_args[0], '"');
-                unset($filter_args[0]);
-                $filter_type = new $filter_type($tag, array_values($filter_args));
+                if ($filter_string != '' && $filter_string != "\r") {
+                    $filter_args = explode(" ", $filter_string);
+                    $filter_type = trim(array_pop($filter_args));
+                    $tag = trim($filter_args[0], '"');
+                    unset($filter_args[0]);
+                    $filter_type = new $filter_type($tag, array_values($filter_args));
 
-                if ($tag[0] == "$") {
-                    $filter = new QuestionAttributeFilter(substr($tag, 1), $filter_type);
-                } else {
-                    $filter = new MetatagFilter($tag, $filter_type);
+                    if ($tag[0] == "$") {
+                        $filter = new QuestionAttributeFilter(substr($tag, 1), $filter_type);
+                    } else {
+                        $filter = new MetatagFilter($tag, $filter_type);
+                    }
+                    $where = $filter->apply_filter();
+
+                    if (!empty($this->where)) {
+                        $this->where .= " AND ";
+                    }
+
+                    $this->where .= $where;
                 }
-                $where = $filter->apply_filter();
-
-                if (!empty($this->where)) {
-                    $this->where .= " AND ";
-                }
-
-                $this->where .= $where;
             }
         }
     }
@@ -154,7 +155,7 @@ class local_searchbymetatags_question_bank_search_condition extends core_questio
         }
 
         $meta_tags = array_unique($meta_tags);
-        $question_attributes = array('$QuestionCategory', '$QuestionText', '$QuestionAnswer');
+        $question_attributes = array('$QuestionName', '$QuestionCategory', '$QuestionText', '$QuestionAnswer');
         $meta_tags = array_merge($meta_tags, $question_attributes);
         asort($meta_tags);
 
