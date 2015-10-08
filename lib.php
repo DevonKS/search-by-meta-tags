@@ -28,13 +28,6 @@ function local_searchbymetatags_get_question_bank_search_conditions($caller) {
     return array( new local_searchbymetatags_question_bank_search_condition($caller));
 }
 
-function local_searchbymetatags_question_bank_column_types($questionbankview) {
-    if ($questionbankview == 'quiz_question_bank_view') {
-        return array();
-    }
-    return array('tags' => new local_searchbymetatags_question_bank_column($questionbankview));
-}
-
 class local_searchbymetatags_question_bank_search_condition extends core_question\bank\search\condition {
     protected $tags;
     protected $where;
@@ -61,8 +54,8 @@ class local_searchbymetatags_question_bank_search_condition extends core_questio
                 $filter_args = explode(" ", $filter_string);
                 $filter_type = trim(array_pop($filter_args));
                 $tag = trim($filter_args[0], '"');
-                $args = array_slice($filter_args, 1);
-                $filter_type = new $filter_type($tag, $args);
+                unset($filter_args[0]);
+                $filter_type = new $filter_type($tag, array_values($filter_args));
 
                 if ($tag[0] == "$") {
                     $filter = new QuestionAttributeFilter(substr($tag, 1), $filter_type);
@@ -135,37 +128,28 @@ class local_searchbymetatags_question_bank_search_condition extends core_questio
     private function get_meta_tags(){
         global $DB;
 
-        $result = $DB->get_records("question");
+        $sql = "SELECT DISTINCT t.id, t.rawname
+                    FROM {tag} t, {tag_instance} ti
+                    WHERE t.id = ti.tagid";
 
+        $tags = $DB->get_records_sql($sql);
         $meta_tags = array();
-        foreach ($result as $question) {
-            $qid = $question->id;
-            $sql = "SELECT t.rawname
-                        FROM {question} q, {tag} t, {tag_instance} ti
-                        WHERE q.id = ti.itemid AND t.id = ti.tagid AND q.id = ?";
-
-            $tags = $DB->get_records_sql($sql, array($qid));
-
-            $meta_tag = "";
-            foreach ($tags as $id => $tag) {
-                if (substr($tag->rawname, 0, 5) == "meta;") {
-                    $meta_tag_data = explode(';', $tag->rawname);
-                    if ($meta_tag_data[1] == 'Base64') {
-                        $meta_tag .= "\n" . base64_decode($meta_tag_data[2]);
-                    } else if ($meta_tag_data[1] == '') {
-                        if ($meta_tag == '') {
-                            $meta_tag .= $meta_tag_data[2];
-                        } else {
-                            $meta_tag .= "\n" . $meta_tag_data[2];
-                        }
-                    }
+        foreach ($tags as $id => $tag) {
+            if (substr($tag->rawname, 0, 5) == "meta;") {
+                $meta_tag_data = explode(';', $tag->rawname);
+                if ($meta_tag_data[1] == 'Base64') {
+                    $tag = base64_decode($meta_tag_data[2]);
+                } else {
+                    $tag = $meta_tag_data[2];
                 }
-            }
 
-            if ($meta_tag != '') {
-                $meta_tag .= "\n";
-                $meta_tag = spyc_load($meta_tag);
-                $meta_tags = array_merge($meta_tags, array_keys($meta_tag));
+                if (strpos($tag, '[') !== false) {
+                    $tag = array(explode('[', $tag)[0] => '');
+                } else {
+                    $tag = yaml_parse($tag);
+                }
+
+                $meta_tags = array_merge($meta_tags, array_keys($tag));
             }
         }
 

@@ -16,7 +16,8 @@
 
 include_once("QuestionFilter.php");
 
-class MetatagFilter extends QuestionFilter{
+class MetatagFilter extends QuestionFilter
+{
     private $filter_tag;
 
     function __construct($filter_tag, $filter_type)
@@ -45,19 +46,37 @@ class MetatagFilter extends QuestionFilter{
                 WHERE q.id = ti.itemid AND t.id = ti.tagid AND q.id = ?";
 
         $tags = $DB->get_records_sql($sql, array($qid));
-        $meta_tag = "";
+        $meta_tag = array();
         foreach ($tags as $id => $tag_part) {
             if (substr($tag_part->rawname, 0, 5) == "meta;") {
                 $meta_tag_data = explode(';', $tag_part->rawname);
                 if ($meta_tag_data[1] == 'Base64') {
-                    $meta_tag .= "\n" . base64_decode($meta_tag_data[2]);
-                } else if ($meta_tag_data[1] == '') {
-                    $meta_tag .= "\n" . $meta_tag_data[2];
+                    $tag = base64_decode($meta_tag_data[2]);
+                } else {
+                    $tag = $meta_tag_data[2];
+                }
+
+                if (strpos($tag, '[') !== false) {
+                    $tag = preg_replace('/\[\d*\]/', '', $tag);
+                }
+
+                $tag = yaml_parse($tag);
+
+                $duplicate_keys = array_intersect_key($meta_tag, $tag);
+                if (empty($duplicate_keys)) {
+                    $meta_tag = array_merge($meta_tag, $tag);
+                } else {
+                    foreach ($duplicate_keys as $duplicate_key => $value) {
+                        if (is_array($meta_tag[$duplicate_key])) {
+                            $meta_tag[$duplicate_key][] = $tag[$duplicate_key];
+                        } else {
+                            $key_value = $meta_tag[$duplicate_key];
+                            $meta_tag[$duplicate_key] = array($key_value, $tag[$duplicate_key]);
+                        }
+                    }
                 }
             }
         }
-
-        $meta_tag = spyc_load($meta_tag);
 
         if (is_a($this->filter_type, 'ExistsFilter')) {
             $metatags = $meta_tag;

@@ -25,20 +25,32 @@ class TextFilter extends AbstractFilter {
 
         if ($args[0] == "doesn't") {
             $this->contains = false;
+            unset($args[0]);
+            unset($args[1]);
         }
         else {
             $this->contains = true;
+            unset($args[0]);
         }
 
-        $this->filter_text = trim(array_pop($args), '"');
+        $this->filter_text = trim(implode(' ', $args), '"');
     }
 
-    public function filter($array)
+    public function filter($questions)
     {
         $matching_questions = array();
-        foreach ($array as $id => $value) {
-            if (is_int(strpos($value, $this->filter_text)) == $this->contains) {
-                $matching_questions[] = $id;
+        foreach ($questions as $id => $value) {
+            if (is_array($value)) {
+                foreach ($value as $text) {
+                    if (is_int(strpos($text, $this->filter_text)) == $this->contains) {
+                        $matching_questions[] = $id;
+                        break;
+                    }
+                }
+            } else {
+                if (is_int(strpos($value, $this->filter_text)) == $this->contains) {
+                    $matching_questions[] = $id;
+                }
             }
         }
 
